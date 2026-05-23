@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="記帳">
+<link rel="manifest" href="manifest.json">
+<title>生活費記帳</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans TC',sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+  .header{background:#fff;border-bottom:1px solid #e8e8e8;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+  .header h1{font-size:18px;font-weight:600}
+  .app{padding:16px;max-width:480px;margin:0 auto;padding-bottom:40px}
+  .card{background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;border:1px solid #ebebeb}
+  .card-label{font-size:12px;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+  .card-amount{font-size:32px;font-weight:700;letter-spacing:-1px}
+  .card-sub{font-size:13px;color:#888;margin-top:6px;display:flex;gap:16px}
+  .card-sub span{display:flex;align-items:center;gap:4px}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .stat{background:#fff;border-radius:14px;padding:16px;border:1px solid #ebebeb}
+  .stat-label{font-size:12px;color:#888;margin-bottom:6px}
+  .stat-val{font-size:22px;font-weight:700}
+  .green{color:#1a9e6a}
+  .red{color:#e0442a}
+  .section-title{font-size:13px;font-weight:600;color:#555;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+  .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .cat-btn{background:#fff;border:1.5px solid #ebebeb;border-radius:14px;padding:14px 10px;cursor:pointer;text-align:center;transition:all 0.15s;-webkit-user-select:none;user-select:none;active:scale(0.97)}
+  .cat-btn:active{transform:scale(0.97)}
+  .cat-btn.active{border-color:#3b82f6;background:#eff6ff}
+  .cat-icon{font-size:24px;margin-bottom:5px}
+  .cat-name{font-size:14px;font-weight:600;color:#1a1a1a}
+  .cat-btn.active .cat-name{color:#1d4ed8}
+  .cat-total{font-size:11px;color:#aaa;margin-top:3px}
+  .cat-btn.active .cat-total{color:#3b82f6}
+  .input-group{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+  input[type=number],input[type=text]{width:100%;height:48px;font-size:16px;padding:0 14px;border:1.5px solid #e0e0e0;border-radius:12px;background:#fff;color:#1a1a1a;outline:none;-webkit-appearance:none}
+  input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.12)}
+  .btn{width:100%;height:50px;border-radius:14px;border:none;font-size:16px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s}
+  .btn:active{transform:scale(0.98)}
+  .btn-primary{background:#1a1a1a;color:#fff}
+  .btn-primary:hover{background:#333}
+  .btn-secondary{background:#fff;color:#1a1a1a;border:1.5px solid #e0e0e0}
+  .btn-secondary:hover{background:#f5f5f5}
+  .btn-danger{background:#fff5f5;color:#c0392b;border:1.5px solid #fecaca}
+  .divider{height:1px;background:#f0f0f0;margin:16px 0}
+  .tx-list{display:flex;flex-direction:column;gap:8px}
+  .tx-item{background:#fff;border:1px solid #ebebeb;border-radius:13px;padding:13px 14px;display:flex;align-items:center;gap:12px}
+  .tx-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .tx-info{flex:1;min-width:0}
+  .tx-name{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tx-meta{font-size:12px;color:#aaa;margin-top:2px}
+  .tx-amt{font-size:15px;font-weight:600;color:#e0442a;flex-shrink:0}
+  .btn-del{background:none;border:none;cursor:pointer;color:#ccc;padding:4px;font-size:18px;line-height:1}
+  .btn-del:active{color:#e0442a}
+  .empty{text-align:center;padding:28px 16px;color:#bbb;font-size:14px}
+  .empty-icon{font-size:36px;margin-bottom:8px}
+  .reset-row{display:flex;gap:8px}
+  .reset-row input{flex:1;height:46px}
+  .reset-row .btn{width:auto;padding:0 18px;height:46px;font-size:14px}
+  .cash-row{display:flex;gap:8px}
+  .cash-row input{flex:1;height:46px}
+  .cash-row .btn{width:auto;padding:0 18px;height:46px;font-size:14px}
+  .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 22px;border-radius:100px;font-size:14px;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;z-index:100}
+  .toast.show{opacity:1}
+  .progress-bar{height:6px;background:#f0f0f0;border-radius:3px;margin-top:12px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:3px;background:#1a9e6a;transition:width 0.4s}
+  .progress-fill.warn{background:#f59e0b}
+  .progress-fill.danger{background:#e0442a}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>💰 生活費記帳</h1>
+  <span style="font-size:12px;color:#aaa" id="today-date"></span>
+</div>
+
+<div class="app">
+
+  <div class="card">
+    <div class="card-label">📋 本期生活費總額</div>
+    <div class="card-amount" id="budget-display">NT$10,000</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+    <div class="card-sub" style="margin-top:10px">
+      <span><span class="dot" style="background:#e0442a"></span>已支出 <strong id="spent-total">NT$0</strong></span>
+      <span><span class="dot" style="background:#1a9e6a"></span>剩餘 <strong id="remaining">NT$10,000</strong></span>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="stat">
+      <div class="stat-label">👜 身上現金</div>
+      <div class="stat-val green" id="cash-display">NT$0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">🧾 記錄筆數</div>
+      <div class="stat-val" id="tx-count">0 筆</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">更新身上現金</div>
+    <div class="cash-row">
+      <input type="number" id="cash-input" placeholder="輸入金額" inputmode="numeric" min="0">
+      <button class="btn btn-secondary" onclick="setCash()">更新</button>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-bottom:10px;margin-top:4px">選擇支出類別</div>
+  <div class="cat-grid">
+    <div class="cat-btn" id="cat-證券" onclick="selectCat('證券')">
+      <div class="cat-icon">📈</div>
+      <div class="cat-name">證券</div>
+      <div class="cat-total" id="total-證券">NT$0</div>
+    </div>
+    <div class="cat-btn" id="cat-用餐" onclick="selectCat('用餐')">
+      <div class="cat-icon">🍱</div>
+      <div class="cat-name">用餐</div>
+      <div class="cat-total" id="total-用餐">NT$0</div>
+    </div>
+    <div class="cat-btn" id="cat-娛樂" onclick="selectCat('娛樂')">
+      <div class="cat-icon">🎮</div>
+      <div class="cat-name">娛樂</div>
+      <div class="cat-total" id="total-娛樂">NT$0</div>
+    </div>
+    <div class="cat-btn" id="cat-備用" onclick="selectCat('備用')">
+      <div class="cat-icon">🗂️</div>
+      <div class="cat-name">備用</div>
+      <div class="cat-total" id="total-備用">NT$0</div>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <input type="number" id="amount-input" placeholder="金額（NT$）" inputmode="numeric" min="1">
+    <input type="text" id="note-input" placeholder="備註（選填，例：麥當勞）" maxlength="30">
+  </div>
+  <button class="btn btn-primary" onclick="addTx()" style="margin-bottom:16px">＋ 新增支出</button>
+
+  <div class="divider"></div>
+
+  <div class="section-title" style="margin-bottom:10px">重設生活費</div>
+  <div class="reset-row" style="margin-bottom:20px">
+    <input type="number" id="budget-input" placeholder="新金額，例：10000" inputmode="numeric" min="1">
+    <button class="btn btn-danger" onclick="resetBudget()">重設</button>
+  </div>
+
+  <div class="section-title" style="margin-bottom:10px">支出記錄</div>
+  <div class="tx-list" id="tx-list"></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CAT_COLORS={'證券':'#3b82f6','用餐':'#1a9e6a','娛樂':'#8b5cf6','備用':'#f59e0b'};
+let data=JSON.parse(localStorage.getItem('budgetApp_v2')||'{"budget":10000,"cash":0,"txns":[]}');
+let selCat=null;
+
+const today=new Date();
+document.getElementById('today-date').textContent=(today.getMonth()+1)+'月'+today.getDate()+'日';
+
+function save(){localStorage.setItem('budgetApp_v2',JSON.stringify(data));}
+function fmt(n){return'NT$'+Math.round(n).toLocaleString();}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+function selectCat(cat){
+  selCat=cat;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('cat-'+cat).classList.add('active');
+}
+
+function setCash(){
+  const v=parseFloat(document.getElementById('cash-input').value);
+  if(isNaN(v)||v<0){toast('❌ 請輸入有效金額');return;}
+  data.cash=v;
+  document.getElementById('cash-input').value='';
+  save();render();toast('✓ 身上現金已更新');
+}
+
+function addTx(){
+  if(!selCat){toast('👆 請先點選類別');return;}
+  const amt=parseFloat(document.getElementById('amount-input').value);
+  if(!amt||amt<=0){toast('❌ 請輸入有效金額');return;}
+  const note=document.getElementById('note-input').value.trim();
+  const now=new Date();
+  const dateStr=(now.getMonth()+1)+'/'+(now.getDate())+' '+(now.getHours()+':'+String(now.getMinutes()).padStart(2,'0'));
+  data.txns.unshift({id:Date.now(),cat:selCat,amt,note,date:dateStr});
+  data.cash=Math.max(0,data.cash-amt);
+  document.getElementById('amount-input').value='';
+  document.getElementById('note-input').value='';
+  save();render();toast('✓ 已記錄 '+fmt(amt));
+}
+
+function delTx(id){
+  const tx=data.txns.find(t=>t.id===id);
+  if(tx)data.cash+=tx.amt;
+  data.txns=data.txns.filter(t=>t.id!==id);
+  save();render();
+}
+
+function resetBudget(){
+  const v=parseFloat(document.getElementById('budget-input').value);
+  if(!v||v<=0){toast('❌ 請輸入有效金額');return;}
+  if(!confirm('確定重設為 '+fmt(v)+' 並清除所有記錄？')){return;}
+  data={budget:v,cash:data.cash,txns:[]};
+  document.getElementById('budget-input').value='';
+  save();render();toast('✓ 已重設為 '+fmt(v));
+}
+
+function render(){
+  const spent=data.txns.reduce((s,t)=>s+t.amt,0);
+  const rem=data.budget-spent;
+  const pct=Math.min(100,Math.round(spent/data.budget*100));
+  document.getElementById('budget-display').textContent=fmt(data.budget);
+  document.getElementById('spent-total').textContent=fmt(spent);
+  document.getElementById('remaining').textContent=fmt(rem);
+  document.getElementById('cash-display').textContent=fmt(data.cash);
+  document.getElementById('tx-count').textContent=data.txns.length+' 筆';
+  const prog=document.getElementById('progress');
+  prog.style.width=pct+'%';
+  prog.className='progress-fill'+(pct>=90?' danger':pct>=70?' warn':'');
+  ['證券','用餐','娛樂','備用'].forEach(cat=>{
+    const sum=data.txns.filter(t=>t.cat===cat).reduce((s,t)=>s+t.amt,0);
+    document.getElementById('total-'+cat).textContent=fmt(sum);
+  });
+  const list=document.getElementById('tx-list');
+  if(!data.txns.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon">📭</div>還沒有記錄<br>選擇類別後新增支出吧</div>';
+    return;
+  }
+  list.innerHTML=data.txns.map(t=>`
+    <div class="tx-item">
+      <div class="tx-dot" style="background:${CAT_COLORS[t.cat]||'#aaa'}"></div>
+      <div class="tx-info">
+        <div class="tx-name">${t.cat}${t.note?' · '+t.note:''}</div>
+        <div class="tx-meta">${t.date}</div>
+      </div>
+      <div class="tx-amt">-${fmt(t.amt)}</div>
+      <button class="btn-del" onclick="delTx(${t.id})" aria-label="刪除">✕</button>
+    </div>`).join('');
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+render();
+</script>
+</body>
+</html>
