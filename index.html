@@ -168,7 +168,8 @@
 
 <script>
 const CAT_COLORS={'證券':'#3b82f6','用餐':'#1a9e6a','娛樂':'#8b5cf6','備用':'#f59e0b','購物':'#e0442a','領錢':'#0ea5e9'};
-const CAT_TYPE={'證券':'expense','用餐':'expense','娛樂':'expense','備用':'expense','購物':'expense','領錢':'income'};
+// type: expense=扣銀行+扣現金, meal=只扣現金, income=扣銀行+加現金
+const CAT_TYPE={'證券':'expense','用餐':'meal','娛樂':'expense','備用':'expense','購物':'expense','領錢':'income'};
 let data=JSON.parse(localStorage.getItem('budgetApp_v2')||'{"budget":10000,"cash":0,"txns":[]}');
 let selCat=null;
 
@@ -210,6 +211,8 @@ function addTx(){
   data.txns.unshift({id:Date.now(),cat:selCat,amt,note,date:dateStr,type});
   if(type==='income'){
     data.cash+=amt;
+  } else if(type==='meal'){
+    data.cash=Math.max(0,data.cash-amt);
   } else {
     data.cash=Math.max(0,data.cash-amt);
   }
@@ -221,8 +224,11 @@ function addTx(){
 function delTx(id){
   const tx=data.txns.find(t=>t.id===id);
   if(tx){
-    if(tx.type==='income') data.cash=Math.max(0,data.cash-tx.amt);
-    else data.cash+=tx.amt;
+    if(tx.type==='income'){
+      data.cash=Math.max(0,data.cash-tx.amt);
+    } else {
+      data.cash+=tx.amt;
+    }
   }
   data.txns=data.txns.filter(t=>t.id!==id);
   save();render();
@@ -238,7 +244,7 @@ function resetBudget(){
 }
 
 function render(){
-  const spent=data.txns.filter(t=>t.type!=='income').reduce((s,t)=>s+t.amt,0);
+  const spent=data.txns.filter(t=>t.type==='expense'||t.type==='income').reduce((s,t)=>s+t.amt,0);
   const rem=data.budget-spent;
   const pct=Math.min(100,Math.round(spent/data.budget*100));
   document.getElementById('budget-display').textContent=fmt(data.budget);
@@ -266,6 +272,7 @@ function render(){
         <div class="tx-meta">${t.date}</div>
       </div>
       <div class="tx-amt" style="color:${t.type==='income'?'#1a9e6a':'#e0442a'}">${t.type==='income'?'+':'-'}${fmt(t.amt)}</div>
+      <div style="font-size:10px;color:#bbb;margin-left:-6px">${t.type==='meal'?'僅現金':t.type==='income'?'銀行':'銀行+現金'}</div>
       <button class="btn-del" onclick="delTx(${t.id})" aria-label="刪除">✕</button>
     </div>`).join('');
 }
